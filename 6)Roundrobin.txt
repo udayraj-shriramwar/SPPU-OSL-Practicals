@@ -1,0 +1,79 @@
+#include <stdio.h>
+
+struct Process {
+    int pid;        // Process ID
+    int at;         // Arrival Time
+    int bt;         // Burst Time
+    int rt;         // Remaining Time
+    int ct;         // Completion Time
+    int tat;        // Turnaround Time
+    int wt;         // Waiting Time
+};
+
+int main() {
+    int n, tq;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    struct Process p[n];
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("\nEnter Arrival Time and Burst Time for Process %d: ", p[i].pid);
+        scanf("%d %d", &p[i].at, &p[i].bt);
+        p[i].rt = p[i].bt;
+    }
+
+    printf("\nEnter Time Quantum: ");
+    scanf("%d", &tq);
+
+    int completed = 0, t = 0;
+    float avg_tat = 0, avg_wt = 0;
+
+    printf("\n--- GANTT CHART ---\n");
+
+    while (completed != n) {
+        int done = 1; // to check if all processes are done
+
+        for (int i = 0; i < n; i++) {
+            // Process should have arrived and still have remaining time
+            if (p[i].at <= t && p[i].rt > 0) {
+                done = 0; // there is a process pending
+
+                if (p[i].rt > tq) {
+                    printf("| P%d ", p[i].pid);
+                    t += tq;
+                    p[i].rt -= tq;
+                } else {
+                    printf("| P%d ", p[i].pid);
+                    t += p[i].rt;
+                    p[i].rt = 0;
+
+                    // Process completed
+                    p[i].ct = t;
+                    p[i].tat = p[i].ct - p[i].at;
+                    p[i].wt = p[i].tat - p[i].bt;
+
+                    avg_tat += p[i].tat;
+                    avg_wt += p[i].wt;
+                    completed++;
+                }
+            }
+        }
+
+        if (done == 1)
+            t++; // if no process has arrived yet
+    }
+
+    printf("|\n");
+
+    printf("\n--- PROCESS TABLE ---\n");
+    printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", p[i].pid, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
+    }
+
+    printf("\nAverage Turnaround Time = %.2f", avg_tat / n);
+    printf("\nAverage Waiting Time = %.2f\n", avg_wt / n);
+
+    return 0;
+}

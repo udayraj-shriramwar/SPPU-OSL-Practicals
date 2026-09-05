@@ -1,0 +1,62 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int n, i, j, head, total = 0;
+    int request[50], temp, index;
+
+    printf("Enter number of disk requests: ");
+    scanf("%d", &n);
+
+    printf("Enter the disk request sequence:\n");
+    for (i = 0; i < n; i++)
+        scanf("%d", &request[i]);
+
+    printf("Enter initial head position: ");
+    scanf("%d", &head);
+
+    // Sort the request array
+    for (i = 0; i < n - 1; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (request[i] > request[j]) {
+                temp = request[i];
+                request[i] = request[j];
+                request[j] = temp;
+            }
+        }
+    }
+
+    // Find position where head is located
+    for (i = 0; i < n; i++) {
+        if (head < request[i]) {
+            index = i;
+            break;
+        }
+    }
+
+    printf("\nSeek Sequence:\n");
+
+    // Move in direction away from spindle (toward higher tracks)
+    for (i = index; i < n; i++) {
+        printf("%d ", request[i]);
+        total += abs(request[i] - head);
+        head = request[i];
+    }
+
+    // Jump back to the lowest request (circular movement)
+    if (index != 0) {
+        total += abs(head - request[0]); // jump distance
+        head = request[0];
+
+        for (i = 0; i < index; i++) {
+            printf("%d ", request[i]);
+            total += abs(request[i] - head);
+            head = request[i];
+        }
+    }
+
+    printf("\n\nTotal Head Movement = %d Cylinders\n", total);
+    printf("Average Head Movement = %.2f Cylinders\n", (float)total / n);
+
+    return 0;
+}

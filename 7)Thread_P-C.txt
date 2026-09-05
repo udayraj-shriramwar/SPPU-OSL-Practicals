@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define BUFFER_SIZE 5   // size of buffer
+
+int buffer[BUFFER_SIZE];
+int in = 0, out = 0;    // buffer index
+
+sem_t empty;  // semaphore to count empty slots
+sem_t full;   // semaphore to count filled slots
+pthread_mutex_t mutex;  // mutex lock for mutual exclusion
+
+// Producer function
+void* producer(void* arg) {
+    int item;
+    for (int i = 1; i <= 10; i++) {
+        item = i;  // produce an item
+        sem_wait(&empty);           // wait if buffer is full
+        pthread_mutex_lock(&mutex); // lock critical section
+
+        buffer[in] = item;
+        printf("Producer produced item %d at position %d\n", item, in);
+        in = (in + 1) % BUFFER_SIZE;
+
+        pthread_mutex_unlock(&mutex); // unlock critical section
+        sem_post(&full);              // increment count of full slots
+
+        sleep(1); // simulate time delay
+    }
+    return NULL;
+}
+
+// Consumer function
+void* consumer(void* arg) {
+    int item;
+    for (int i = 1; i <= 10; i++) {
+        sem_wait(&full);            // wait if buffer is empty
+        pthread_mutex_lock(&mutex); // lock critical section
+
+        item = buffer[out];
+        printf("Consumer consumed item %d from position %d\n", item, out);
+        out = (out + 1) % BUFFER_SIZE;
+
+        pthread_mutex_unlock(&mutex); // unlock
+        sem_post(&empty);             // increment empty slot count
+
+        sleep(2); // simulate slower consumption
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod, cons;
+
+    // Initialize semaphores and mutex
+    sem_init(&empty, 0, BUFFER_SIZE);
+    sem_init(&full, 0, 0);
+    pthread_mutex_init(&mutex, NULL);
+
+    // Create producer and consumer threads
+    pthread_create(&prod, NULL, producer, NULL);
+    pthread_create(&cons, NULL, consumer, NULL);
+
+    // Wait for both threads to finish
+    pthread_join(prod, NULL);
+    pthread_join(cons, NULL);
+
+    // Destroy semaphores and mutex
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    pthread_mutex_destroy(&mutex);
+
+    printf("\nAll items produced and consumed successfully!\n");
+    return 0;
+}
+
+
+gcc producer_consumer.c -lpthread -o producer_consumer
+./producer_consumer

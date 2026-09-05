@@ -1,0 +1,73 @@
+#include <stdio.h>
+
+struct Process {
+    int pid;         // Process ID
+    int at;          // Arrival Time
+    int bt;          // Burst Time
+    int ct;          // Completion Time
+    int tat;         // Turnaround Time
+    int wt;          // Waiting Time
+    int rt;          // Remaining Time
+};
+
+int main() {
+    int n, completed = 0, t = 0, min_index = -1;
+    float avg_tat = 0, avg_wt = 0;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    struct Process p[n];
+
+    for (int i = 0; i < n; i++) {
+        printf("\nEnter Arrival Time and Burst Time for Process %d: ", i + 1);
+        p[i].pid = i + 1;
+        scanf("%d%d", &p[i].at, &p[i].bt);
+        p[i].rt = p[i].bt;
+    }
+
+    printf("\n--- GANTT CHART ---\n");
+
+    while (completed != n) {
+        min_index = -1;
+        int min_bt = 9999;
+
+        // Find process with minimum remaining time among arrived processes
+        for (int i = 0; i < n; i++) {
+            if (p[i].at <= t && p[i].rt > 0 && p[i].rt < min_bt) {
+                min_bt = p[i].rt;
+                min_index = i;
+            }
+        }
+
+        if (min_index == -1) {
+            t++; // No process has arrived yet
+            continue;
+        }
+
+        // Run the selected process for 1 unit time
+        p[min_index].rt--;
+        printf("| P%d ", p[min_index].pid);
+        t++;
+
+        // If process completed
+        if (p[min_index].rt == 0) {
+            completed++;
+            p[min_index].ct = t;
+            p[min_index].tat = p[min_index].ct - p[min_index].at;
+            p[min_index].wt = p[min_index].tat - p[min_index].bt;
+            avg_tat += p[min_index].tat;
+            avg_wt += p[min_index].wt;
+        }
+    }
+
+    printf("|\n\n--- PROCESS TABLE ---\n");
+    printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", p[i].pid, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
+    }
+
+    printf("\nAverage Turnaround Time = %.2f", avg_tat / n);
+    printf("\nAverage Waiting Time = %.2f\n", avg_wt / n);
+
+    return 0;
+}

@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+pthread_mutex_t mutex;       // for mutual exclusion
+pthread_mutex_t writeblock;  // to block writer
+int readcount = 0;           // number of readers
+
+void *reader(void *arg) {
+    int f = ((int)arg); // reader id
+
+    while (1) {
+        pthread_mutex_lock(&mutex);
+        readcount++;
+        if (readcount == 1)
+            pthread_mutex_lock(&writeblock); // first reader locks writer
+        pthread_mutex_unlock(&mutex);
+
+        printf("🟢 Reader %d is reading (Readers active: %d)\n", f, readcount);
+        sleep(1);
+
+        pthread_mutex_lock(&mutex);
+        readcount--;
+        if (readcount == 0)
+            pthread_mutex_unlock(&writeblock); // last reader unlocks writer
+        pthread_mutex_unlock(&mutex);
+
+        sleep(1);
+    }
+}
+
+void *writer(void *arg) {
+    int f = ((int)arg); // writer id
+
+    while (1) {
+        pthread_mutex_lock(&writeblock);
+        printf("🔴 Writer %d is writing...\n", f);
+        sleep(2);
+        pthread_mutex_unlock(&writeblock);
+        printf("✅ Writer %d finished writing.\n", f);
+        sleep(2);
+    }
+}
+
+int main() {
+    pthread_t rtid[5], wtid[3];
+    pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_init(&writeblock, NULL);
+
+    // Create reader and writer threads
+    for (int i = 0; i < 3; i++)
+        pthread_create(&wtid[i], NULL, writer, (void *)i + 1);
+    for (int i = 0; i < 5; i++)
+        pthread_create(&rtid[i], NULL, reader, (void *)i + 1);
+
+    // Wait for threads (infinite loop)
+    for (int i = 0; i < 3; i++)
+        pthread_join(wtid[i], NULL);
+    for (int i = 0; i < 5; i++)
+        pthread_join(rtid[i], NULL);
+
+    pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&writeblock);
+    return 0;
+}
+
+
+gcc reader_writer.c -lpthread -o reader_writer
+./reader_writer

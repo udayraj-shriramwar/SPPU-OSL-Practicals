@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int n, i, j, head, total = 0, direction;
+    int request[50], temp, disk_size, move[50], index;
+
+    printf("Enter number of disk requests: ");
+    scanf("%d", &n);
+
+    printf("Enter the disk request sequence:\n");
+    for (i = 0; i < n; i++)
+        scanf("%d", &request[i]);
+
+    printf("Enter initial head position: ");
+    scanf("%d", &head);
+
+    printf("Enter total disk size (maximum cylinder number): ");
+    scanf("%d", &disk_size);
+
+    printf("Enter head movement direction (1 for away from spindle / higher tracks, 0 for towards spindle / lower tracks): ");
+    scanf("%d", &direction);
+
+    // Sort the request array
+    for (i = 0; i < n - 1; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (request[i] > request[j]) {
+                temp = request[i];
+                request[i] = request[j];
+                request[j] = temp;
+            }
+        }
+    }
+
+    // Find head position in sorted list
+    for (i = 0; i < n; i++) {
+        if (head < request[i]) {
+            index = i;
+            break;
+        }
+    }
+
+    printf("\nSeek Sequence:\n");
+
+    // Moving away from spindle (toward higher tracks)
+    if (direction == 1) {
+        for (i = index; i < n; i++) {
+            printf("%d ", request[i]);
+            total += abs(request[i] - head);
+            head = request[i];
+        }
+        // After last request, move to end of disk
+        if (head != disk_size - 1) {
+            total += abs((disk_size - 1) - head);
+            head = disk_size - 1;
+        }
+
+        // Now move back (towards spindle)
+        for (i = index - 1; i >= 0; i--) {
+            printf("%d ", request[i]);
+            total += abs(request[i] - head);
+            head = request[i];
+        }
+    }
+    // Moving towards spindle (lower tracks)
+    else {
+        for (i = index - 1; i >= 0; i--) {
+            printf("%d ", request[i]);
+            total += abs(request[i] - head);
+            head = request[i];
+        }
+        // After last request, move to start of disk
+        if (head != 0) {
+            total += abs(head - 0);
+            head = 0;
+        }
+        // Now move in reverse direction (away from spindle)
+        for (i = index; i < n; i++) {
+            printf("%d ", request[i]);
+            total += abs(request[i] - head);
+            head = request[i];
+        }
+    }
+
+    printf("\n\nTotal Head Movement = %d Cylinders\n", total);
+    printf("Average Head Movement = %.2f Cylinders\n", (float)total / n);
+
+    return 0;
+}
